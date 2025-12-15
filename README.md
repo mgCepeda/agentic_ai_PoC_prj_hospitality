@@ -107,7 +107,7 @@ Below is a visual representation of the project architecture:
 - **Depends On**: Depends on the `bookings-db-data-loader` service.
 - **Environment Variables**:
   - `ENVIRONMENT=development.localcontainer`
-  - `AI_AGENTIC_API_KEY=${AI_AGENTIC_API_KEY_WKSP_HOSPITALITY}`
+  - `AI_AGENTIC_API_KEY=${AI_AGENTIC_API_KEY}`
   - `POSTGRES_HOST=${POSTGRES_HOST}`
   - `POSTGRES_PORT=${POSTGRES_PORT}`
   - `POSTGRES_USER=${POSTGRES_USER}`
@@ -161,7 +161,7 @@ This component provides a PostgreSQL database for hotel bookings, along with a d
 #### Temporary (current terminal session only)
 
 ```bash
-export AI_AGENTIC_API_KEY_WKSP_HOSPITALITY=your-api-key-here
+export AI_AGENTIC_API_KEY=your-api-key-here
 ```
 
 #### Permanent (recommended for WSL/Linux)
@@ -178,7 +178,7 @@ nano ~/.bashrc
 ########################################
 ### PERSONAL KEYS
 ########################################
-export AI_AGENTIC_API_KEY_WKSP_HOSPITALITY=your-api-key-here
+export AI_AGENTIC_API_KEY=your-api-key-here
 ########################################
 ### PERSONAL KEYS (end)
 ########################################
