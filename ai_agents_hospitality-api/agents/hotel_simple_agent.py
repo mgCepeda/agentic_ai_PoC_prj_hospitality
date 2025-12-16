@@ -51,12 +51,12 @@ def _get_hotels_data_path():
     Returns:
         Path: Path to the hotels data directory
     """
-    if HOTELS_DATA_PATH_LOCAL.exists() and (HOTELS_DATA_PATH_LOCAL / "hotels.json").exists():
-        logger.info(f"Using local hotel data path: {HOTELS_DATA_PATH_LOCAL}")
-        return HOTELS_DATA_PATH_LOCAL
-    else:
+    if HOTELS_DATA_PATH_EXTERNAL.exists() and (HOTELS_DATA_PATH_EXTERNAL / "hotels.json").exists():
         logger.info(f"Using external hotel data path: {HOTELS_DATA_PATH_EXTERNAL}")
         return HOTELS_DATA_PATH_EXTERNAL
+    else:
+        logger.info(f"Using local hotel data path: {HOTELS_DATA_PATH_LOCAL}")
+        return HOTELS_DATA_PATH_LOCAL
 
 # Global variables to cache loaded data and agent
 _hotels_data: Optional[dict] = None
@@ -119,7 +119,9 @@ def load_hotel_data() -> Tuple[dict, str]:
     with open(hotel_details_file, 'r', encoding='utf-8') as f:
         _hotel_details_text = f.read()
     
-    logger.info(f"Successfully loaded hotel data ({len(_hotels_data.get('hotels', []))} hotels)")
+    # Support both 'hotels' and 'Hotels' keys
+    hotels_list = _hotels_data.get('hotels') or _hotels_data.get('Hotels') or []
+    logger.info(f"Successfully loaded hotel data ({len(hotels_list)} hotels)")
     
     return _hotels_data, _hotel_details_text
 

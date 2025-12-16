@@ -1,6 +1,6 @@
 # 📋 TODO - Agentic AI Hospitality PoC
 
-> Last updated: 2025-12-06
+> Last updated: 2025-12-16
 
 ---
 
@@ -17,9 +17,9 @@
 ### High Priority
 | # | Task | Created | Context |
 |---|------|--------|---------|
-| 1 | xxxx | 2025-12-06 | xxxx |
-| 2 | xxxy | 2025-12-06 | xxxy |
-| 3 | xxxz | 2025-12-06 | xxxz |
+| 1 | Re-test simple agent with generated data | 2025-12-16 | Validate responses reflect generated hotels |
+| 2 | Add switch to select dataset source via config/env | 2025-12-16 | Toggle between sample and generated datasets |
+
 
 ### Medium Priority
 | # | Task | Created | Context |
@@ -37,7 +37,10 @@
 
 | Task | Completed | Commit | Notes |
 |------|-----------|--------|-------|
-| _No tasks completed yet_ | - | - | - |
+| Create and activate virtual environment | 2025-12-16 | - | `.venv` configured |
+| Configure `AI_AGENTIC_API_KEY` in `~/.bashrc` | 2025-12-16 | - | Key exported and persisted |
+| Generate synthetic hotel data | 2025-12-16 | - | Files in `bookings-db/output_files/hotels/` |
+| Fix agent data source path to use generated hotels | 2025-12-16 | - | Prioritize `bookings-db/output_files/hotels/` over local sample |
 
 ---
 
@@ -45,7 +48,21 @@
 
 | Description | Impact | Detected | Status |
 |-------------|--------|----------|--------|
-| _No technical debt registered_ | - | - | - |
+| Agent defaulted to local sample data path | Medium | 2025-12-16 | Addressed by path update; consider config-driven source. Rationale: during testing, the agent loaded the local sample dataset instead of the freshly generated synthetic data. We now prioritize `bookings-db/output_files/hotels/` if `hotels.json` exists and keep a fallback to the local set for compatibility. |
+
+---
+
+## ⚠️ Problems Encountered
+
+### Working under WSL `/mnt` paths
+- Observation: We started the workshop on WSL-mounted Windows paths (e.g., `/mnt/c/...`). On these paths, creating virtual environments (`.venv`) and installing dependencies is significantly slower and more error-prone.
+- Impact: Much longer install times, potential timeouts, and permission/path anomalies caused by NTFS semantics and Windows–Linux interoperability overhead.
+- Recommendation (professional): Work under native Linux filesystem paths, e.g., `/home/marina/...`, where IO is faster and POSIX semantics are consistent. This provides:
+	- Faster and more reliable environment creation (`python -m venv .venv`) and package installation.
+	- Fewer permission/path issues during build and runtime.
+	- A more stable development experience for Python tooling inside WSL.
+
+Recommended working path for this project: `/home/marina/workshop/agentic_ai_PoC_prj_hospitality`
 
 ---
 
@@ -75,24 +92,26 @@ When you complete a task, reference the commit like this:
 ### Exercise 0: Simple Agentic Assistant with File Context
 
 #### Phase 1: Setup & Data Preparation
-- [ ] Install LangChain dependencies (`langchain`, `langchain-google-genai`)
-- [ ] Configure Google Gemini API key as environment variable (`AI_AGENTIC_API_KEY`)
-- [ ] Generate synthetic hotel data (3 hotels) using `gen_synthetic_hotels.py`
-- [ ] Verify hotel files are created in `bookings-db/output_files/hotels/`
+- [x] Install LangChain dependencies (`langchain`, `langchain-google-genai`)
+- [x] Configure Google Gemini API key as environment variable (`AI_AGENTIC_API_KEY`)
+- [x] Generate synthetic hotel data (3 hotels) using `gen_synthetic_hotels.py`
+- [x] Verify hotel files are created in `bookings-db/output_files/hotels/`
+- [x] Completed on 2025-12-16
 
 #### Phase 2: Core Implementation
-- [ ] Create function to load hotel JSON file (`hotels.json`)
-- [ ] Create function to load hotel details markdown (`hotel_details.md`)
-- [ ] Implement `answer_hotel_question()` function with file context
-- [ ] Create ChatPromptTemplate with system prompt for hotel assistant
-- [ ] Build LangChain chain (prompt template + LLM)
+- [x] Create function to load hotel JSON file (`hotels.json`)
+- [x] Create function to load hotel details markdown (`hotel_details.md`)
+- [x] Implement `answer_hotel_question()` function with file context
+- [x] Create ChatPromptTemplate with system prompt for hotel assistant
+- [x] Build LangChain chain (prompt template + LLM)
 
 #### Phase 3: Integration & Testing
-- [ ] Create `handle_hotel_query_simple()` async function for WebSocket API
-- [ ] Test with basic queries (hotel names, addresses, locations)
-- [ ] Test with meal plan queries
+- [x] Create `handle_hotel_query_simple()` async function for WebSocket API
+- [x] Test with basic queries (hotel names, addresses, locations)
+- [x] Test with meal plan queries
 - [ ] Test with room information queries
 - [ ] Verify error handling works correctly
+- [ ] Initial agent test executed on 2025-12-16; found path issue
 
 #### Phase 4: Documentation & Cleanup
 - [ ] Add code comments and docstrings
@@ -208,10 +227,10 @@ When you complete a task, reference the commit like this:
 ## 📊 Quick Summary
 
 ```
-📌 Pending:  4
+📌 Pending:  2
 🔥 In progress: 0
-✅ Completed: 0
-🐛 Technical debt: 0
+✅ Completed: 4
+🐛 Technical debt: 1
 🎓 Workshop Exercises: 3 (Exercise 0, 1, 2)
 ```
 
