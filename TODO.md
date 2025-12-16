@@ -64,6 +64,10 @@
 
 Recommended working path for this project: `/home/marina/workshop/agentic_ai_PoC_prj_hospitality`
 
+### Model quota limitations (Gemini gemini-2.5-flash-lite)
+- Observation: Testing was constrained by the available quota/rate limits of the Gemini model in use (`gemini-2.5-flash-lite`). This limited the number of end‑to‑end runs and iterative prompt refinements during the workshop.
+- Impact: Fewer test executions per session; reduced breadth of query coverage; occasional 429/rate‑limit responses or timeouts under bursty usage.
+
 ---
 
 ## 📝 Usage Notes
