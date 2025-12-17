@@ -22,7 +22,7 @@ class AgentConfig:
     """Configuration for AI agents."""
     
     provider: str = "gemini"  # "gemini" or "openai"
-    model: str = "gemini-2.5-flash-lite"
+    model: str = "gemini-2.0-flash-lite"
     temperature: float = 0.0
     api_key: str = ""
     
