@@ -115,3 +115,6 @@ doctrees/
 
 # Project specific
 logs/
+
+# ChromaDB vector store
+bookings-db/vectorstore/
