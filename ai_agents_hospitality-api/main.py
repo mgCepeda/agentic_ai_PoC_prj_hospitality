@@ -43,6 +43,25 @@ except Exception as e:
     logger.warning(f"Error loading Exercise 0 agent: {e}. Using hardcoded responses.")
     EXERCISE_0_AVAILABLE = False
 
+# Import Exercise 1 RAG agent (with Ollama)
+RAG_AGENT_AVAILABLE = False
+try:
+    from agents.hotel_rag_agent import answer_hotel_question_rag, get_vectorstore
+    # Try to verify vector store is ready
+    try:
+        vs = get_vectorstore()
+        if vs._collection.count() > 0:
+            RAG_AGENT_AVAILABLE = True
+            logger.info(f"✅ Exercise 1 RAG agent loaded successfully with {vs._collection.count()} documents")
+        else:
+            logger.warning("RAG agent loaded but vector store is empty")
+    except Exception as e:
+        logger.warning(f"RAG agent code loaded but vector store not ready: {e}")
+except ImportError as e:
+    logger.warning(f"Exercise 1 RAG agent not available (ImportError): {e}")
+except Exception as e:
+    logger.warning(f"Error loading Exercise 1 RAG agent: {e}")
+
 
 # Hardcoded responses for demo queries
 HARDCODED_RESPONSES = {
@@ -232,8 +251,23 @@ async def websocket_endpoint(websocket: WebSocket, uuid: str):
                 except json.JSONDecodeError:
                     user_query = data
                 
-                # Get response from Exercise 0 agent or fallback to hardcoded
-                if EXERCISE_0_AVAILABLE:
+                # Get response - Try RAG (Exercise 1) first, then Exercise 0, then hardcoded
+                if RAG_AGENT_AVAILABLE:
+                    try:
+                        logger.info(f"🤖 Using RAG agent (Exercise 1) for query: {user_query[:100]}...")
+                        response_content = await answer_hotel_question_rag(user_query)
+                        logger.info(f"✅ RAG agent response generated successfully for {uuid}")
+                    except Exception as e:
+                        logger.error(f"❌ Error in RAG agent: {e}", exc_info=True)
+                        logger.warning(f"Falling back to Exercise 0 or hardcoded response for {uuid}")
+                        if EXERCISE_0_AVAILABLE:
+                            try:
+                                response_content = await handle_hotel_query_simple(user_query)
+                            except Exception:
+                                response_content = find_matching_response(user_query)
+                        else:
+                            response_content = find_matching_response(user_query)
+                elif EXERCISE_0_AVAILABLE:
                     try:
                         logger.info(f"Using Exercise 0 agent for query: {user_query[:100]}...")
                         response_content = await handle_hotel_query_simple(user_query)
@@ -244,7 +278,7 @@ async def websocket_endpoint(websocket: WebSocket, uuid: str):
                         response_content = find_matching_response(user_query)
                 else:
                     # Fallback to hardcoded responses
-                    logger.debug(f"Using hardcoded responses (Exercise 0 not available) for {uuid}")
+                    logger.debug(f"Using hardcoded responses (agents not available) for {uuid}")
                     response_content = find_matching_response(user_query)
                 
                 # Send response back to client

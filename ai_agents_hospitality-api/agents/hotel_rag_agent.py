@@ -74,31 +74,23 @@ def create_rag_chain():
     # Get configuration
     config = get_agent_config()
     
-    # Initialize LLM - Try HuggingFace first to avoid quota issues
-    if USE_HUGGINGFACE_LLM and HuggingFaceEndpoint is not None:
-        try:
-            logger.info("Using HuggingFace LLM (free, no quota limits)")
-            # Use a free model from HuggingFace
-            llm = HuggingFaceEndpoint(
-                repo_id="mistralai/Mistral-7B-Instruct-v0.2",
-                temperature=0.1,
-                max_new_tokens=512,
-                huggingfacehub_api_token=os.getenv("HUGGINGFACE_API_TOKEN", "")
-            )
-        except Exception as e:
-            logger.warning(f"HuggingFace LLM failed: {e}, falling back to Gemini")
-            llm = ChatGoogleGenerativeAI(
-                model=config.model,
-                temperature=config.temperature,
-                google_api_key=config.api_key
-            )
-    else:
-        # Use Gemini
+    # Initialize LLM - Try Gemini first (gemini-2.5-flash-lite)
+    try:
+        logger.info("Using Gemini gemini-2.5-flash-lite LLM")
         llm = ChatGoogleGenerativeAI(
-            model=config.model,
-            temperature=config.temperature,
+            model="gemini-2.5-flash-lite",
+            temperature=0,
             google_api_key=config.api_key
         )
+    except Exception as e:
+        logger.warning(f"Gemini not available: {e}, trying Ollama as fallback")
+        try:
+            from langchain_community.llms import Ollama
+            logger.info("Using Ollama LLM (local, no quota limits)")
+            llm = Ollama(model="llama3.2:1b", temperature=0)
+        except Exception as e2:
+            logger.error(f"Both Gemini and Ollama failed. Error: {e2}")
+            raise Exception("No LLM available. Please configure Gemini API key or install Ollama.")
     
     # Get vector store
     vectorstore = get_vectorstore()
@@ -114,6 +106,13 @@ def create_rag_chain():
 
 Use the following context to answer the question accurately and specifically.
 
+**IMPORTANT - Data Field Terminology Guide:**
+- When asked about "discount for extra bed" → Look for "ExtraBedChargePercentage" or "Extra Bed Charge" (this is a CHARGE/SURCHARGE, not a discount)
+- When asked about "discount for fewer guests" → Look for "OccupancyBaseDiscountPercentage" or "Occupancy Discount"
+- When asked about "promotion discount" → Look for "PromotionPriceDiscount"
+- When asked about "meal charges" or "meal prices" → Look for "MealPlanPrices" or "Meal Plan Charges"
+- Be flexible with terminology - "charge", "surcharge", "additional cost", and "extra fee" are synonyms
+
 Context:
 {context}
 
@@ -123,6 +122,7 @@ Instructions:
 - Be accurate and specific, referencing hotel names, locations, and details from the context
 - If comparing multiple hotels, present the information in a clear, structured format
 - Include relevant prices, room types, and other specific details when available
+- Interpret the question flexibly - look for semantically related fields even if terminology differs
 - If the information is not available in the context, say so clearly
 - Format your response in markdown for readability
 

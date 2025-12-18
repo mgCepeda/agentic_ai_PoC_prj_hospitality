@@ -1,0 +1,52 @@
+# Test Queries for Hotel RAG Bot
+# Based on existing hotels in the database
+
+## Hotel Details Queries
+
+1. What is the full address of Obsidian Tower?
+
+2. What are the meal charges for Half Board in Royal Sovereign?
+
+3. List all hotels in Paris
+
+4. What is the discount for extra bed in Grand Victoria?
+
+5. What are the meal charges for Room and Breakfast in hotels in Nice?
+
+6. What is the full address of Imperial Crown?
+
+## Room Pricing Queries
+
+7. How much does a double room cost during peak season in Obsidian Tower?
+
+8. What is the price for a single room during off season in Majestic Plaza?
+
+9. Compare the triple room prices between Royal Sovereign and Imperial Crown
+
+10. How much does a premium single room cost during peak season in Grand Victoria?
+
+## Room Distribution Queries
+
+11. How many total rooms are there in Regal Chambers?
+
+12. What is the distribution of rooms by type in Sovereign Suites?
+
+13. How many double rooms are there in Noble Abode?
+
+14. What is the ratio of standard vs premium rooms in Heritage House?
+
+## Complex Comparison Queries
+
+15. What is the difference in price between peak and off season for a double room in Legacy Lodge?
+
+16. Compare the prices for a premium double room during peak season between Obsidian Tower and Grand Victoria
+
+17. How do the meal charges for All Inclusive compare between hotels in Paris and hotels in Nice?
+
+18. What is the lowest price for a standard single room in Cannes considering no meal plan?
+
+## Aggregate Queries
+
+19. How many hotels are there in France?
+
+20. What is the mean price for a triple room during peak season across all hotels?
