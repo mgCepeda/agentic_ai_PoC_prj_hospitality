@@ -62,6 +62,17 @@ except ImportError as e:
 except Exception as e:
     logger.warning(f"Error loading Exercise 1 RAG agent: {e}")
 
+# Import Exercise 2 SQL Agent for booking analytics
+SQL_AGENT_AVAILABLE = False
+try:
+    from agents.bookings_sql_agent import answer_booking_question_sql
+    SQL_AGENT_AVAILABLE = True
+    logger.info("✅ Exercise 2 SQL agent loaded successfully")
+except ImportError as e:
+    logger.warning(f"Exercise 2 SQL agent not available (ImportError): {e}")
+except Exception as e:
+    logger.warning(f"Error loading Exercise 2 SQL agent: {e}")
+
 
 # Hardcoded responses for demo queries
 HARDCODED_RESPONSES = {
@@ -149,6 +160,30 @@ Difference: €100/night (35.7% discount in off season)""",
 }
 
 
+def is_booking_analytics_query(query: str) -> bool:
+    """
+    Determine if a query is about booking analytics (Exercise 2).
+    
+    Args:
+        query: User query string
+        
+    Returns:
+        True if query is about bookings/analytics, False otherwise
+    """
+    booking_keywords = [
+        'booking', 'bookings', 'reservation', 'reservations',
+        'revenue', 'income', 'earnings', 'total price',
+        'occupancy', 'occupied', 'availability',
+        'guest', 'guests', 'customer', 'customers',
+        'check-in', 'check in', 'checkout', 'check out',
+        'analytics', 'statistics', 'report', 'analysis',
+        'how many bookings', 'number of bookings', 'count bookings',
+        'total revenue', 'total income'
+    ]
+    query_lower = query.lower()
+    return any(keyword in query_lower for keyword in booking_keywords)
+
+
 def find_matching_response(query: str) -> str:
     """
     Find a matching hardcoded response based on the query.
@@ -205,6 +240,54 @@ app.mount("/static", StaticFiles(directory=str(PROJECT_ROOT / "static")), name="
 templates = Jinja2Templates(directory=str(PROJECT_ROOT / "templates"))
 
 
+@app.post("/api/sql/preview")
+async def preview_sql(request: Request):
+    """
+    Generate SQL preview without executing (Two-Step Process - Step 1).
+    
+    Request body: {"question": "your question here"}
+    Response: {"sql": "...", "explanation": "...", "question": "..."}
+    """
+    try:
+        body = await request.json()
+        question = body.get("question", "")
+        
+        if not question:
+            return {"error": "No question provided"}
+        
+        from agents.bookings_sql_agent import generate_sql_preview
+        preview = await generate_sql_preview(question)
+        
+        return preview
+    except Exception as e:
+        logger.error(f"Error in SQL preview: {e}")
+        return {"error": str(e)}
+
+
+@app.post("/api/sql/execute")
+async def execute_sql(request: Request):
+    """
+    Execute confirmed SQL query (Two-Step Process - Step 2).
+    
+    Request body: {"sql": "SELECT ..."}
+    Response: {"success": bool, "result": ..., "error": ...}
+    """
+    try:
+        body = await request.json()
+        sql_query = body.get("sql", "")
+        
+        if not sql_query:
+            return {"error": "No SQL query provided"}
+        
+        from agents.bookings_sql_agent import execute_confirmed_sql
+        result = await execute_confirmed_sql(sql_query)
+        
+        return result
+    except Exception as e:
+        logger.error(f"Error executing SQL: {e}")
+        return {"error": str(e)}
+
+
 @app.get("/")
 async def get(request: Request):
     """
@@ -251,8 +334,33 @@ async def websocket_endpoint(websocket: WebSocket, uuid: str):
                 except json.JSONDecodeError:
                     user_query = data
                 
-                # Get response - Try RAG (Exercise 1) first, then Exercise 0, then hardcoded
-                if RAG_AGENT_AVAILABLE:
+                # Determine which agent to use based on query type
+                # Priority: SQL Agent (bookings) > RAG (hotels) > Exercise 0 > hardcoded
+                
+                # Check if it's a booking analytics query (Exercise 2)
+                if SQL_AGENT_AVAILABLE and is_booking_analytics_query(user_query):
+                    try:
+                        logger.info(f"🤖 Using SQL agent (Exercise 2) for query: {user_query[:100]}...")
+                        
+                        # Two-Step Process: Execute SQL agent and show answer + SQL used
+                        from agents.bookings_sql_agent import answer_booking_question_sql
+                        
+                        # Execute the full agent to get natural language answer and SQL
+                        result = await answer_booking_question_sql(user_query)
+                        
+                        # Format SQL with line breaks for better readability
+                        sql_formatted = result['sql'].replace(' FROM ', '\nFROM ').replace(' WHERE ', '\nWHERE ').replace(' GROUP BY ', '\nGROUP BY ').replace(' ORDER BY ', '\nORDER BY ')
+                        
+                        # Format response: Natural language answer first, then SQL
+                        response_content = f"**Answer:** {result['answer']}\n\n**SQL:**\n```sql\n{sql_formatted}\n```"
+                        
+                        logger.info(f"✅ SQL agent response generated successfully for {uuid}")
+                    except Exception as e:
+                        logger.error(f"❌ Error in SQL agent: {e}", exc_info=True)
+                        response_content = "Sorry, I couldn't process your booking analytics query. Please try rephrasing or check the database connection."
+                
+                # Otherwise try RAG (Exercise 1) for hotel information queries
+                elif RAG_AGENT_AVAILABLE:
                     try:
                         logger.info(f"🤖 Using RAG agent (Exercise 1) for query: {user_query[:100]}...")
                         response_content = await answer_hotel_question_rag(user_query)

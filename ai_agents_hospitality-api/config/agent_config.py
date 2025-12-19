@@ -21,18 +21,19 @@ from util.logger_config import logger
 class AgentConfig:
     """Configuration for AI agents."""
     
-    provider: str = "gemini"  # "gemini" or "openai"
+    provider: str = "gemini"  # "gemini", "openai", or "ollama"
     model: str = "gemini-2.0-flash-lite"
     temperature: float = 0.0
     api_key: str = ""
     
     def __post_init__(self):
         """Validate configuration after initialization."""
-        if self.provider not in ["gemini", "openai"]:
-            raise ValueError(f"Invalid provider: {self.provider}. Must be 'gemini' or 'openai'")
+        if self.provider not in ["gemini", "openai", "ollama"]:
+            raise ValueError(f"Invalid provider: {self.provider}. Must be 'gemini', 'openai', or 'ollama'")
         
-        if not self.api_key:
-            raise ValueError("API key is required. Set AI_AGENTIC_API_KEY environment variable or configure in agent_config.yaml")
+        # API key is required for gemini and openai, but not for ollama
+        if not self.api_key and self.provider in ["gemini", "openai"]:
+            raise ValueError(f"API key is required for provider '{self.provider}'. Set AI_AGENTIC_API_KEY environment variable or configure in agent_config.yaml")
         
         if self.temperature < 0.0 or self.temperature > 1.0:
             raise ValueError(f"Temperature must be between 0.0 and 1.0, got {self.temperature}")

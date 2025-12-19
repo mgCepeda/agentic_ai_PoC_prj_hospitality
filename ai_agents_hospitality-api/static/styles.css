@@ -106,7 +106,8 @@ li {
     max-width: 90%;  
     word-wrap: break-word;  
     display: inline-block;  
-    position: relative;  
+    position: relative;
+    overflow-x: auto; /* Allow horizontal scroll if content is too wide */
 }  
   
 .message-wrapper {  
@@ -136,7 +137,11 @@ li {
     color: black;  
     text-align: left;  
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);  
-    margin-bottom: 2px;  
+    margin-bottom: 2px;
+    overflow-x: auto !important; /* Enable horizontal scroll for long content */
+    max-width: 100% !important; /* Ensure it doesn't overflow parent */
+    overflow-wrap: break-word;
+    width: 100%;
 }  
   
 .role {  
@@ -205,5 +210,39 @@ li {
     max-width: 400px; /* Ajusta este valor según sea necesario */
 }
 
+/* SQL Code blocks - ensure full query is visible */
+.server-message pre {
+    background-color: #f5f5f5 !important;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 10px;
+    margin: 10px 0;
+    overflow-x: auto !important; /* Enable horizontal scroll if needed */
+    white-space: pre !important; /* Preserve formatting */
+    max-width: 100% !important;
+    width: 100% !important; /* Take full available width */
+    box-sizing: border-box;
+}
 
+.server-message code {
+    font-family: 'Courier New', Courier, monospace !important;
+    font-size: 11px !important;
+    color: #d63384 !important;
+    white-space: nowrap !important; /* Don't wrap SQL code - keep it on one line */
+    word-break: keep-all !important; /* Keep SQL as one line */
+    display: inline-block !important; /* Allow it to extend beyond container */
+    overflow-x: visible;
+}
 
+/* SQL keyword highlighting */
+.server-message pre code {
+    display: inline-block !important; /* Allow horizontal scroll */
+    color: #333 !important;
+    white-space: nowrap !important;
+}
+
+/* Ensure inline code doesn't break out */
+.server-message p code {
+    white-space: normal !important;
+    word-break: break-word !important;
+}
