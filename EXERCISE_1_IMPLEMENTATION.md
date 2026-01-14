@@ -6,7 +6,7 @@ Este documento detalla la implementación del **Ejercicio 1: Hotel Details with 
 
 **Fecha de implementación**: Diciembre 18, 2025  
 **Modelo de embeddings**: Google Gemini `text-embedding-004` (alternativa: HuggingFace `all-MiniLM-L6-v2`)  
-**Modelo LLM**: Google Gemini `gemini-2.5-flash-lite` con fallback a Ollama `llama3.2:1b`  
+**Modelo LLM**: Ollama `llama3.1:8b` (local, gratuito, sin límites) con fallback a Gemini  
 **Documentos embedidos**: 183 documentos  
 **Vector store**: ChromaDB con persistencia en disco
 

@@ -348,11 +348,16 @@ async def websocket_endpoint(websocket: WebSocket, uuid: str):
                         # Execute the full agent to get natural language answer and SQL
                         result = await answer_booking_question_sql(user_query)
                         
-                        # Format SQL with line breaks for better readability
-                        sql_formatted = result['sql'].replace(' FROM ', '\nFROM ').replace(' WHERE ', '\nWHERE ').replace(' GROUP BY ', '\nGROUP BY ').replace(' ORDER BY ', '\nORDER BY ')
-                        
-                        # Format response: Natural language answer first, then SQL
-                        response_content = f"**Answer:** {result['answer']}\n\n**SQL:**\n```sql\n{sql_formatted}\n```"
+                        # Check if result is valid dict with expected keys
+                        if isinstance(result, dict) and 'answer' in result and 'sql' in result:
+                            # Format SQL with line breaks for better readability
+                            sql_formatted = result['sql'].replace(' FROM ', '\nFROM ').replace(' WHERE ', '\nWHERE ').replace(' GROUP BY ', '\nGROUP BY ').replace(' ORDER BY ', '\nORDER BY ')
+                            
+                            # Format response: Natural language answer first, then SQL
+                            response_content = f"**Answer:** {result['answer']}\n\n**SQL:**\n```sql\n{sql_formatted}\n```"
+                        else:
+                            # Fallback if result format is unexpected
+                            response_content = str(result) if result else "Error processing query"
                         
                         logger.info(f"✅ SQL agent response generated successfully for {uuid}")
                     except Exception as e:

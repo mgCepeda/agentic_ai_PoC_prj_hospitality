@@ -7,7 +7,7 @@ agent:
   # LLM Provider: "gemini", "openai", or "ollama"
   provider: "ollama"
   
-  # Model name (using local Ollama)
+  # Model name (using Ollama - local, free, no limits)
   model: "llama3.1:8b"
   
   # Temperature (0.0 to 1.0)

@@ -53,9 +53,14 @@ def get_database() -> SQLDatabase:
     if _db is None:
         logger.info("Connecting to PostgreSQL bookings database...")
         
-        # Database connection string
+        # Database connection string from environment variables
         # Format: postgresql://username:password@host:port/database
-        db_uri = "postgresql://postgres:postgres@localhost:5432/bookings_db"
+        db_host = os.getenv("POSTGRES_HOST", "localhost")
+        db_port = os.getenv("POSTGRES_PORT", "5432")
+        db_user = os.getenv("POSTGRES_USER", "postgres")
+        db_password = os.getenv("POSTGRES_PASSWORD", "postgres")
+        db_name = os.getenv("POSTGRES_DB", "bookings_db")
+        db_uri = f"postgresql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
         
         try:
             _db = SQLDatabase.from_uri(
@@ -87,21 +92,32 @@ def create_sql_agent_chain():
     # Get configuration
     config = get_agent_config()
     
-    # Initialize LLM based on configuration
-    if config.provider == "ollama":
-        logger.info(f"Using Ollama {config.model} LLM for SQL Agent")
-        if Ollama is None:
-            raise ImportError("Ollama not installed. Install langchain-ollama package.")
-        llm = Ollama(model=config.model, temperature=config.temperature)
-    elif config.provider == "gemini":
-        logger.info(f"Using Gemini {config.model} LLM for SQL Agent")
-        llm = ChatGoogleGenerativeAI(
-            model=config.model,
-            temperature=config.temperature,
-            google_api_key=config.api_key
-        )
-    else:
-        raise ValueError(f"Unsupported provider: {config.provider}")
+    # Initialize LLM based on configuration with fallback to Ollama
+    try:
+        if config.provider == "ollama":
+            logger.info(f"Using Ollama {config.model} LLM for SQL Agent")
+            if Ollama is None:
+                raise ImportError("Ollama not installed. Install langchain-ollama package.")
+            llm = Ollama(model=config.model, temperature=config.temperature)
+        elif config.provider == "gemini":
+            logger.info(f"Using Gemini {config.model} LLM for SQL Agent")
+            llm = ChatGoogleGenerativeAI(
+                model=config.model,
+                temperature=config.temperature,
+                google_api_key=config.api_key
+            )
+        else:
+            raise ValueError(f"Unsupported provider: {config.provider}")
+    except Exception as e:
+        logger.warning(f"Primary LLM not available: {e}, trying Ollama as fallback")
+        try:
+            if Ollama is None:
+                raise ImportError("Ollama not installed. Install langchain-community or langchain-ollama package.")
+            logger.info("Using Ollama llama3.2:1b LLM (local, no quota limits)")
+            llm = Ollama(model="llama3.2:1b", temperature=0)
+        except Exception as e2:
+            logger.error(f"Both configured LLM and Ollama failed. Error: {e2}")
+            raise Exception("No LLM available. Please configure Gemini API key or install Ollama.")
     
     # Get database connection
     db = get_database()
@@ -113,9 +129,10 @@ def create_sql_agent_chain():
     _sql_agent = create_sql_agent(
         llm=llm,
         toolkit=toolkit,
+        agent_type="zero-shot-react-description",  # Better for Ollama
         verbose=True,  # Show SQL generation steps
-        max_iterations=25,  # Maximum reasoning steps (optimized for Ollama)
-        max_execution_time=120,  # Timeout after 120 seconds (optimized for Ollama)
+        max_iterations=50,  # Increased for Ollama
+        max_execution_time=300,  # Increased timeout to 5 minutes for Ollama
         handle_parsing_errors=True,  # Handle SQL syntax errors gracefully
         return_intermediate_steps=True,  # Return SQL queries executed
         prefix="""You are a hotel booking analytics assistant with access to a PostgreSQL database.
@@ -399,6 +416,86 @@ async def answer_booking_question_sql(question: str, execute_mode: bool = True) 
     try:
         logger.info(f"Processing SQL query: {question}")
         
+        # Check if using Ollama - use simplified direct approach
+        config = get_agent_config()
+        if config.provider == "ollama":
+            import re as regex_module  # Local import to avoid name conflicts
+            logger.info("Using simplified SQL generation for Ollama")
+            
+            # Get database and LLM
+            db = get_database()
+            llm = Ollama(model=config.model, temperature=0)
+            
+            # Get schema info
+            schema_info = db.get_table_info()
+            
+            # Simple prompt to generate SQL
+            prompt = f"""Given this PostgreSQL database schema:
+
+{schema_info}
+
+Write a single SQL query to answer: {question}
+
+Return ONLY the SQL query, no explanation.
+
+SQL:"""
+            
+            # Generate SQL
+            sql_response = llm.invoke(prompt).strip()
+            
+            # Clean up SQL
+            sql_query = regex_module.sub(r'```sql\n?', '', sql_response)
+            sql_query = regex_module.sub(r'```\n?', '', sql_query)
+            sql_query = sql_query.strip().rstrip(';')
+            
+            logger.info(f"Generated SQL: {sql_query}")
+            
+            # Execute query
+            try:
+                result = db.run(sql_query)
+                logger.info(f"Query result: {result}")
+                
+                # Format result in a more readable way
+                # Convert Python tuples to readable format
+                formatted_result = str(result)
+                if formatted_result.startswith('[') and formatted_result.endswith(']'):
+                    # It's a list of tuples - format it better
+                    try:
+                        import ast
+                        parsed = ast.literal_eval(formatted_result)
+                        if len(parsed) == 1 and len(parsed[0]) == 1:
+                            # Single value result like COUNT
+                            formatted_result = str(parsed[0][0])
+                        else:
+                            formatted_result = str(parsed)
+                    except:
+                        pass
+                
+                # Generate answer with formatted result
+                answer_prompt = f"""Based on the SQL query result, answer the question directly.
+
+Question: {question}
+SQL Query: {sql_query}
+Result: {formatted_result}
+
+Provide a clear, direct answer using the result value:"""
+                
+                answer = llm.invoke(answer_prompt).strip()
+                
+                return {
+                    'answer': answer,
+                    'sql': sql_query,
+                    'success': True
+                }
+            except Exception as e:
+                logger.error(f"SQL execution error: {e}")
+                return {
+                    'answer': f"Error executing query: {str(e)}",
+                    'sql': sql_query,
+                    'error': str(e)
+                }
+        
+        # Original agent-based approach for Gemini/OpenAI
         # Get SQL agent
         agent = create_sql_agent_chain()
         
@@ -455,7 +552,11 @@ async def answer_booking_question_sql(question: str, execute_mode: bool = True) 
         
     except Exception as e:
         logger.error(f"Error in SQL agent: {e}", exc_info=True)
-        return f"❌ Error processing booking analytics query: {str(e)}\n\nPlease try rephrasing your question or check the database connection."
+        return {
+            'answer': f"❌ Error processing booking analytics query: {str(e)}\n\nPlease try rephrasing your question or check the database connection.",
+            'sql': "-- Error occurred",
+            'error': str(e)
+        }
 
 
 async def execute_confirmed_sql(sql_query: str) -> dict:

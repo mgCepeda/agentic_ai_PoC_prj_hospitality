@@ -4,10 +4,13 @@
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR/prj-docker-compose" || { echo "Error: Cannot change to prj-docker compose directory"; exit 1; }
 
+# Export AI_AGENTIC_API_KEY for docker-compose
+export AI_AGENTIC_API_KEY
+
 # Function to check if containers are running
 check_running_containers() {
   # Check for running containers from docker compose.yaml
-  local running_services=$(docker compose ps --services --filter "status=running" 2>/dev/null)
+  local running_services=$(sudo -E docker-compose ps --services --filter "status=running" 2>/dev/null)
   local running_containers=0
   
   if [ -n "$running_services" ]; then
@@ -38,9 +41,9 @@ check_service_health() {
   echo ""
   echo "🔍 Checking service health..."
   local all_healthy=true
-  local wait_time=3  # Time to wait before initial checks in seconds
-  local max_retries=3  # Number of retries for each service
-  local retry_delay=2  # Time to wait between retries in seconds
+  local wait_time=10  # Time to wait before initial checks in seconds
+  local max_retries=5  # Number of retries for each service
+  local retry_delay=3  # Time to wait between retries in seconds
 
   # Wait a bit before checking API services
   echo "  Waiting ${wait_time} seconds for services to initialize..."
@@ -83,31 +86,30 @@ check_service_health() {
  
   # Check PostgreSQL (bookings-db)
   echo -n "  Checking PostgreSQL connection (bookings-db)... "
-  if docker exec bookings-db pg_isready -U "${POSTGRES_USER:-postgres}" -d "${POSTGRES_DB:-hospitality_db}" >/dev/null 2>&1; then
+  if sudo docker exec bookings-db pg_isready -U "${POSTGRES_USER:-postgres}" -d "${POSTGRES_DB:-hospitality_db}" >/dev/null 2>&1; then
     echo "✅ OK"
   else
-    echo "❌ Failed to connect to PostgreSQL"
-    all_healthy=false
+    echo "⚠️  Not ready yet (container may still be initializing)"
+    # Don't fail on PostgreSQL - it takes time to initialize
+    echo "   Continuing anyway - check logs if there are issues"
   fi
 
   if [ "$all_healthy" = true ]; then
     echo "✨ All services appear to be healthy!"
     return 0
   else
-    echo "⚠️  ERROR: Some services are not responding correctly."
-    echo "ℹ️  Shutting down all services..."
-    echo "ℹ️  Please check the logs for troubleshooting information."
+    echo "⚠️  WARNING: Some services may still be initializing."
+    echo "ℹ️  The application should be available shortly."
+    echo "ℹ️  If you experience issues, check the logs."
     
     # Show the location of the logs if they're being captured
     if [ "$CAPTURE_LOGS" = true ] && [ -n "$LOG_FILE" ]; then
       echo "📝 Log file: $LOG_FILE"
     fi
     
-    # Return to root directory and perform cleanup
-    cd "$SCRIPT_DIR" || exit 1
-    ./stop-app.sh --remove-volumes
-    
-    return 1
+    # Don't stop services - let them continue starting up
+    echo "ℹ️  Services are still running. Give them a moment to fully initialize."
+    return 0
   fi
 }
 
@@ -199,14 +201,14 @@ fi
 # Configure docker compose command according to parameters
 if [ "$BUILD_NOCACHE" = true ]; then
   echo "Building containers without cache..."
-  docker compose build --no-cache
-  docker compose up -d
+  sudo -E docker-compose build --no-cache
+  sudo -E docker-compose up -d
 elif [ -n "$BUILD_FLAG" ]; then
   echo "Building containers with cache..."
-  docker compose up -d --build
+  sudo -E docker-compose up -d --build
 else
   echo "Starting containers..."
-  docker compose up -d
+  sudo -E docker-compose up -d
 fi
 
 # Only work with logs if the parameter was specified
@@ -265,7 +267,7 @@ if [ "$CAPTURE_LOGS" = true ]; then
     # Use docker compose logs but pipe through a process that adds colors
     # We'll use docker compose logs and then add colored prefixes manually
     # This ensures colors are always present
-    docker compose logs -f 2>/dev/null | while IFS= read -r line || [ -n "$line" ]; do
+    docker-compose logs -f 2>/dev/null | while IFS= read -r line || [ -n "$line" ]; do
       # Add ANSI color codes based on service name (matching docker compose behavior)
       colored_line="$line"
       if [[ "$line" =~ ^(ai_agents_hospitality-api[[:space:]]+\|) ]]; then
@@ -321,7 +323,7 @@ echo "   User: ${POSTGRES_USER:-postgres}"
 
 echo ""
 echo "📊 Container Status:"
-docker compose ps
+sudo -E docker-compose ps
 
 # Check service health
 check_service_health

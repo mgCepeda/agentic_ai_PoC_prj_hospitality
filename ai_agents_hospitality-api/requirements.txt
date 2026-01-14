@@ -13,5 +13,12 @@ langchain-google-genai>=1.0.0
 langchain-openai>=0.1.0  # For OpenAI-compatible proxy support
 langchain-community>=0.2.0
 
+# Exercise 1 - RAG dependencies
+langchain-huggingface>=0.0.1
+chromadb>=0.4.0
+
+# Exercise 2 - SQL dependencies
+psycopg2-binary>=2.9.0
+
 
 

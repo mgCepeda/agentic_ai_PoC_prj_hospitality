@@ -1,0 +1,100 @@
+================================================================================
+QUERIES PARA PROBAR AGENTES EN LA INTERFAZ WEB
+================================================================================
+
+Abre la interfaz web: http://localhost:8001
+Copia y pega estas queries una por una para probar los agentes
+
+================================================================================
+SQL AGENT - QUERIES SOBRE BOOKINGS/ANALYTICS
+================================================================================
+
+How many bookings are there in total?
+
+What is the total revenue for all hotels?
+
+Tell me the amount of bookings for Obsidian Tower in 2025
+
+How many bookings does Royal Sovereign have?
+
+Show me the total revenue for Grand Victoria
+
+How many bookings are there in January 2025?
+
+What is the average revenue per booking?
+
+Which hotel has the most bookings?
+
+Show me total guests in 2025
+
+How many reservations were made in December 2024?
+
+What is the total income for all hotels in 2025?
+
+Show me booking statistics for 2025
+
+How many customers stayed in January 2025?
+
+What is the occupancy rate for Obsidian Tower?
+
+Tell me the earnings for Royal Sovereign
+
+================================================================================
+RAG AGENT - QUERIES SOBRE HOTELES
+================================================================================
+
+What is the address of Obsidian Tower?
+
+List all hotels in France
+
+Tell me about hotels in Paris
+
+What amenities does Grand Victoria have?
+
+Which hotels have a spa?
+
+What are the room types at Royal Sovereign?
+
+Tell me about hotels with a pool
+
+What is the check-in time at Obsidian Tower?
+
+Which hotels are in London?
+
+Describe the Presidential Suite
+
+What hotels are in Madrid?
+
+Tell me about luxury hotels
+
+Which hotels have conference rooms?
+
+What facilities does Obsidian Tower offer?
+
+Show me hotels with fitness centers
+
+What is the location of Grand Victoria?
+
+Tell me about hotels in Barcelona
+
+Which hotels have restaurants?
+
+What room categories are available?
+
+Describe hotels with ocean views
+
+================================================================================
+QUERIES MIXTAS/AMBIGUAS (para probar la detección)
+================================================================================
+
+Tell me about Obsidian Tower
+
+Show me information about Grand Victoria
+
+What hotels are available?
+
+Tell me about the hotels
+
+How is Royal Sovereign?
+
+================================================================================

@@ -2,18 +2,92 @@
 
 This repository contains a complete Proof of Concept (PoC) for the hospitality sector using AI Agentic. The project implements a comprehensive hotel management system with specialized AI agents.
 
+**🎯 Status:** 🟢 **FUNCIONAL Y LISTO PARA USO EDUCATIVO** (85-90% completo)  
+**📊 Ver:** [PROJECT_STATUS.md](./PROJECT_STATUS.md) | [DOCUMENTATION_INDEX.md](./DOCUMENTATION_INDEX.md)
+
+## 🆕 Recent Updates (January 2026)
+
+- ✅ **Workshop.sh improvements**: Integrated `pre-start.sh` for automatic PostgreSQL conflict resolution
+- ✅ **Model switch**: Default to Ollama `llama3.1:8b` (free, unlimited, local) instead of Gemini
+- ✅ **SQL Agent fixes**: Enhanced error handling and consistent response format
+- ✅ **Agent routing**: Keyword-based intelligent routing between SQL and RAG agents
+
 ## 📚 Documentation
 
+### Main Documentation
 | Document | Description |
 |----------|-------------|
+| [🚀 Quick Start Guide](./QUICKSTART.md) | **Complete setup for local development (PostgreSQL + venv)** |
 | [🎓 Workshop Guide](./WORKSHOP.md) | Step-by-step workshop for building AI agents with LangChain |
+| [✅ Workshop Completion Guide](./WORKSHOP_COMPLETION.md) | Status, usage guide, and completion checklist |
+| [🧪 Test Validation Guide](./TEST_VALIDATION.md) | Complete test suite with queries and expected results |
+| [📋 TODO & Status](./TODO.md) | Project status, tasks, and technical debt tracking |
 | [🔧 Synthetic Data Generator](./HOWTO_generate_synthetic_data.md) | How to generate synthetic hotel and booking data |
+
+### Exercise Implementation Guides
+| Exercise | Document | Status |
+|----------|----------|--------|
+| **Exercise 0** | [Simple Agent Implementation](./EXERCISE_0_IMPLEMENTATION.md) | ✅ Complete |
+| **Exercise 1** | [RAG Agent Implementation](./EXERCISE_1_IMPLEMENTATION.md) | ✅ Complete |
+| **Exercise 2** | [SQL Agent Implementation](./EXERCISE_2_IMPLEMENTATION.md) | ✅ Complete |
+
+### Component Documentation
+| Component | Description |
+|-----------|-------------|
 | [🤖 AI Agents API](./ai_agents_hospitality-api/README.md) | WebSocket API for AI agent interactions |
 | [🗄️ Bookings Database](./bookings-db/README.md) | PostgreSQL database and data loader |
 
 ## 🚀 Quick Start - Launch Application
 
 **The complete application is launched using Docker Compose. This is the recommended and primary way to run the system.**
+
+### ⚙️ Pre-requisites
+
+**Note:** `workshop.sh` now automatically runs `pre-start.sh` checks when starting.
+
+The system will automatically:
+- ✅ Stop local PostgreSQL service (frees port 5432 for Docker)
+- ✅ Activate Python virtual environment
+- ✅ Verify AI_AGENTIC_API_KEY is set
+- ✅ Check dependencies
+
+If you prefer to run pre-checks manually:
+
+```bash
+./pre-start.sh
+```
+
+### 🎯 Recommended: All-in-One Workshop Script
+
+The easiest way to manage the workshop:
+
+```bash
+# Start everything (pre-start + Docker + validation ready)
+./workshop.sh start
+
+# Start with log capture
+./workshop.sh start --logs
+
+# Check service status
+./workshop.sh status
+
+# Run validation tests
+./workshop.sh validate
+
+# View logs
+./workshop.sh logs
+
+# Stop everything (Docker + restore environment)
+./workshop.sh stop
+
+# Complete cleanup
+./workshop.sh clean --all
+
+# Show all commands
+./workshop.sh help
+```
+
+### 🚀 Manual Start (Alternative)
 
 ```bash
 # From the project root directory
@@ -24,9 +98,6 @@ This repository contains a complete Proof of Concept (PoC) for the hospitality s
 
 # Access the application
 # URL: http://localhost:8001
-
-# To stop the application
-./stop-app.sh
 ```
 
 The script will automatically:
@@ -53,8 +124,12 @@ The Hospitality PoC is a comprehensive solution consisting of several components
 ├── doc/                           # Project documentation and diagrams
 │   ├── arq.png                    # Architecture diagram
 │   └── doc.excalidraw            # Editable architecture diagram source
+├── workshop.sh                    # ⭐ All-in-one launcher (RECOMMENDED)
+├── pre-start.sh                   # Environment preparation (stops local PostgreSQL, activates venv)
 ├── start-app.sh                   # Main startup script (run from root)
 ├── stop-app.sh                    # Main stop script (run from root)
+├── post-stop.sh                   # Environment restoration (restarts local PostgreSQL)
+├── validate.sh                    # Automated validation script
 └── logs/                          # Application logs
 ```
 
@@ -295,6 +370,20 @@ Use the `stop-app.sh` script to stop the application:
 - `--remove-images, -i`: Remove built images
 - `--clean-all, -ca`: Complete cleanup (containers, volumes, images, and network)
 - `--help, -h`: Show help information
+
+### 🔄 Post-Stop Restoration
+
+After stopping Docker services, restore your local environment:
+
+```bash
+# Restore local PostgreSQL and deactivate venv
+./post-stop.sh
+```
+
+This script will:
+- ✅ Restart local PostgreSQL service (port 5432)
+- ✅ Deactivate Python virtual environment
+- ✅ Show restoration summary
 
 ## 📋 Application URLs
 

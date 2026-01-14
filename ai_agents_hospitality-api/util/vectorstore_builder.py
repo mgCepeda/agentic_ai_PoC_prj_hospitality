@@ -28,6 +28,10 @@ def _project_root() -> Path:
 
 
 def _hotels_dir() -> Path:
+    # Use /app/data/hotels when running in container, fallback to bookings-db path
+    container_path = Path("/app/data/hotels")
+    if container_path.exists():
+        return container_path
     return _project_root().parent / "bookings-db" / "output_files" / "hotels"
 
 
@@ -39,8 +43,9 @@ USE_HUGGINGFACE = False
 def build_vectorstore_simple() -> Chroma:
     global USE_HUGGINGFACE
 
-    # Persist directory for vector store
-    persist_dir = _project_root().parent / "bookings-db" / "vectorstore" / "chroma_db"
+    # Persist directory for vector store - use container-friendly path
+    container_persist_dir = Path("/app/vectorstore/chroma_db")
+    persist_dir = container_persist_dir if Path("/app").exists() else _project_root().parent / "bookings-db" / "vectorstore" / "chroma_db"
     
     # Select embeddings backend
     if USE_HUGGINGFACE:

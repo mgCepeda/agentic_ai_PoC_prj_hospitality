@@ -119,7 +119,7 @@ def load_hotel_data() -> Tuple[dict, str]:
     with open(hotel_details_file, 'r', encoding='utf-8') as f:
         _hotel_details_text = f.read()
     
-    logger.info(f"Successfully loaded hotel data ({len(_hotels_data.get('hotels', []))} hotels)")
+    logger.info(f"Successfully loaded hotel data ({len(_hotels_data.get('Hotels', []))} hotels)")
     
     return _hotels_data, _hotel_details_text
 
