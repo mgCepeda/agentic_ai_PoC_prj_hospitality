@@ -12,7 +12,8 @@ from .hotel_output_writer import (
     generate_file_csv_for_hotels,
     generate_file_csv_for_all_hotels,
     generate_file_md_hotel_details,
-    generate_file_md_hotel_rooms
+    generate_file_md_hotel_rooms,
+    generate_file_md_hotel_meal_plans
 )
 from .hotel_query_writer import generate_file_csv_for_queries_room_hotels
 
@@ -30,6 +31,7 @@ __all__ = [
     'generate_file_csv_for_all_hotels',
     'generate_file_md_hotel_details',
     'generate_file_md_hotel_rooms',
+    'generate_file_md_hotel_meal_plans',
 
     # Query output functions
     'generate_file_csv_for_queries_room_hotels'

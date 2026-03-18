@@ -20,7 +20,8 @@ from src.output.hotel_output_writer import \
     generate_file_csv_for_hotels, \
     generate_file_csv_for_all_hotels, \
     generate_file_md_hotel_details, \
-    generate_file_md_hotel_rooms
+    generate_file_md_hotel_rooms, \
+    generate_file_md_hotel_meal_plans
 from src.output.hotel_query_writer import generate_file_csv_for_queries_room_hotels
 
 
@@ -116,6 +117,7 @@ if __name__ == "__main__":
     generate_file_csv_for_queries_room_hotels(queries, OUTPUT_PATH_HOTELS)
     generate_file_md_hotel_details(hotel_list, OUTPUT_PATH_HOTELS)
     generate_file_md_hotel_rooms(hotel_list, OUTPUT_PATH_HOTELS)
+    generate_file_md_hotel_meal_plans(hotel_list, OUTPUT_PATH_HOTELS)
 
 
     hotel_booking_list = []

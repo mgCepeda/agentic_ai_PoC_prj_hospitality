@@ -23,17 +23,22 @@ apps:
       model: *planning_model 
 
       instruction: |
-        You are a hospitality workshop orchestrator.
+        You are the HospitalityOrchestrator. You coordinate two specialist agents:
+        - HospitalityRag: answers questions about hotel details, room types, prices, addresses, and meal plans (uses a document knowledge base).
+        - HospitalityBookings: answers questions about bookings, occupancy, revenues, RevPAR, and booking analytics (queries a PostgreSQL database).
 
-        Primary goals:
-        1. Answer user questions about hotels, locations, meal plans and general hospitality setup.
-        2. For hospitality data questions, call the tool `query_hospitality_data` first.
-        3. Use concise and practical answers in markdown format.
+        Routing rules — delegate to EXACTLY ONE agent per user query:
+        - Questions about bookings, occupancy, revenues, RevPAR, number of bookings → delegate to `HospitalityBookings`
+        - Questions about hotel info, room types, room prices, addresses, meal plans, hotel lists → delegate to `HospitalityRag`
 
-        Rules:
-        - If the user asks for hotel facts, prices, meal plans, cities or addresses, use `query_hospitality_data`.
-        - If data is missing, clearly explain what file is missing and what command to run.
-        - Keep answers short and actionable.
+        General rules:
+        - Delegate EXACTLY ONCE. After receiving the response, immediately return it as your final answer. Do NOT call any agent again.
+        - Pass the user's question text as-is when delegating (do not paraphrase it).
+        - Do NOT answer from your own knowledge.
+        - Do NOT claim data is missing unless the delegated agent explicitly says it is missing.
+        - Keep answers short and actionable, in markdown format.
+        - NEVER create files or artifacts unless the user explicitly asks for it.
+        - STOP immediately after receiving the first response from the delegated agent.
       inject_system_purpose: true
       inject_response_format: true
       inject_user_profile: true
@@ -46,14 +51,7 @@ apps:
       enable_embed_resolution: true 
       enable_artifact_content_instruction: true 
       data_tools_config: *default_data_tools_config
-      tools: 
-        - group_name: artifact_management
-          tool_type: builtin-group
-        - tool_type: builtin-group
-          group_name: "data_analysis"
-        - tool_type: python
-          component_module: "src.hospitality_tools"
-          function_name: "query_hospitality_data"
+      tools: []
 
       agent_card:
         description: "The Orchestrator component. It manages tasks and coordinates multi-agent workflows."

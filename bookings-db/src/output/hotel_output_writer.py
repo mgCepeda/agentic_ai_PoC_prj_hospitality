@@ -60,13 +60,14 @@ def generate_file_md_hotel_details(hotels: List[Dict[str, Any]], output_path: st
     filename = f"{output_path}hotel_details.md"
     with open(filename, "w", encoding="utf-8") as file:
         for hotel in hotels:
-            file.write(f"# {hotel['Name']}\n\n")
+            addr = hotel.get('Address', {})
+            city = addr.get('City', 'Unknown')
+            country = addr.get('Country', 'Unknown')
+            file.write(f"# {hotel['Name']} ({city}, {country})\n\n")
             file.write(f"**Hotel Key:** {hotel['hotelkey']}\n\n")
-            file.write(
-                f"**Location:** {hotel['Address']['Country']}, "
-                f"{hotel['Address']['City']}\n\n")
-            file.write(f"**Address:** {hotel['Address']['Address']}\n\n")
-            file.write(f"**Zip Code:** {hotel['Address']['ZipCode']}\n\n")
+            file.write(f"**Location:** {country}, {city}\n\n")
+            file.write(f"**Address:** {addr.get('Address', '')}\n\n")
+            file.write(f"**Zip Code:** {addr.get('ZipCode', '')}\n\n")
             file.write("## Rooms\n\n")
             for room in hotel['Rooms']:
                 file.write(f"### Room {room['RoomId']}\n\n")
@@ -88,12 +89,52 @@ def generate_file_md_hotel_rooms(hotels: List[Dict[str, Any]], output_path: str)
     filename = f"{output_path}hotel_rooms.md"
     with open(filename, "w", encoding="utf-8") as file:
         for hotel in hotels:
-            file.write(f"# {hotel['Name']}\n\n")
-            file.write("| Room ID | Category | Type | Price Off Season | Price Peak Season |\n")
-            file.write("|---------|----------|------|------------------|-------------------|\n")
+            addr = hotel.get('Address', {})
+            city = addr.get('City', 'Unknown')
+            country = addr.get('Country', 'Unknown')
+            file.write(f"# {hotel['Name']} ({city}, {country})\n\n")
+            file.write(f"- City: {city}\n")
+            file.write(f"- Country: {country}\n\n")
             for room in hotel['Rooms']:
+                file.write(f"## Room {room['RoomId']} - {room['Category']} {room['Type']} ({city}, {country})\n")
+                file.write(f"- Hotel: {hotel['Name']}\n")
+                file.write(f"- City: {city}\n")
+                file.write(f"- Country: {country}\n")
+                file.write(f"- Category: {room['Category']}\n")
+                file.write(f"- Type: {room['Type']}\n")
+                file.write(f"- Guests: {room['Guests']}\n")
+                file.write(f"- Price Off Season: {room['PriceOffSeason']}\n")
+                file.write(f"- Price Peak Season: {room['PricePeakSeason']}\n\n")
+            file.write("---\n\n")
+
+def generate_file_md_hotel_meal_plans(hotels: List[Dict[str, Any]], output_path: str) -> None:
+    """Generate a Markdown file containing meal plan details per hotel.
+
+    Args:
+        hotels: List of hotel dictionaries
+        output_path: Directory path where the file will be saved
+    """
+    filename = f"{output_path}hotel_meal_plans.md"
+    with open(filename, "w", encoding="utf-8") as file:
+        file.write("# Hotel Meal Plans Reference\n\n")
+        for hotel in hotels:
+            params = hotel.get('SyntheticParams', {})
+            weights = params.get('MealPlanWeights', {})
+            prices = params.get('MealPlanPrices', {})
+            addr = hotel.get('Address', {})
+            city = addr.get('City', 'Unknown')
+            country = addr.get('Country', 'Unknown')
+            file.write(f"## {hotel['Name']} ({city}, {country})\n")
+            file.write(f"- Country: {country}\n")
+            file.write(f"- City: {city}\n")
+            file.write(f"- Stars: {hotel.get('Stars', 'N/A')}\n\n")
+            file.write("### Meal Plans Available\n")
+            for info in weights.values():
+                plan_name = info['name']
+                available = 'Yes' if info['weight'] > 0 else 'No'
+                price_mult = prices.get(plan_name, 1.0)
                 file.write(
-                    f"| {room['RoomId']} | {room['Category']} | {room['Type']} | "
-                    f"{room['PriceOffSeason']} | {room['PricePeakSeason']} |\n"
+                    f"- **{plan_name}**: Available={available},"
+                    f" Price multiplier={price_mult}x\n"
                 )
-            file.write("\n---\n\n")
+            file.write("\n")

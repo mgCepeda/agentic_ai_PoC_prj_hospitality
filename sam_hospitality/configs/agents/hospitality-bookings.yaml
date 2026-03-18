@@ -1,0 +1,103 @@
+# Plugin Metadata:
+# Name: sam-sql-database
+# Version: 0.1.0
+# Description: A plugin that provides a SQL agent to perform complex queries based on natural language.
+# Author: SolaceLabs <solacelabs@solace.com>
+
+log:
+  stdout_log_level: INFO
+  log_file_level: DEBUG
+  log_file: hospitality-bookings.log
+
+
+!include ../shared_config.yaml
+
+apps:
+  - name: hospitality-bookings-app
+    app_module: solace_agent_mesh.agent.sac.app 
+    broker:
+      <<: *broker_connection
+    app_config:
+      namespace: "${NAMESPACE}" # Your A2A topic namespace
+      agent_name: "HospitalityBookings" 
+      display_name: "Hospitality Bookings Agent" 
+      supports_streaming: false # SQL agent tools are typically request-response
+
+      model: *general_model 
+      instruction: |
+        You are HospitalityBookings, an expert SQL assistant for a hotel bookings database.
+        The database contains a single table called 'bookings' with hotel reservations data.
+        The database schema and query examples will be provided to you.
+        Your primary goal is to translate user questions into accurate PostgreSQL queries.
+        If a user asks to query the database, generate the SQL and call the 'execute_sql_query' tool.
+        If the 'execute_sql_query' tool returns an error, analyze the error message and the original SQL,
+        then try to correct the SQL query and call the tool again.
+        If the results are large and the tool indicates they were saved as an artifact, inform the user about the artifact.
+        Always use the 'execute_sql_query' tool to interact with the database.
+        For occupancy calculations, use total_nights and check_in_date/check_out_date.
+        For revenue calculations, sum the total_price field.
+        For RevPAR, divide total revenue by total available room-nights in the period.
+
+      # --- Configurable Agent Initialization & Cleanup ---
+      agent_init_function:
+        module: "sam_sql_database.lifecycle"
+        name: "initialize_sql_agent"
+        config: # This is the custom_agent_init_config, validated by SqlAgentInitConfigModel
+          db_type: "${HOSPITALITY_BOOKINGS_DB_TYPE}"
+          db_host: "${HOSPITALITY_BOOKINGS_DB_HOST}"
+          db_port: ${HOSPITALITY_BOOKINGS_DB_PORT}
+          db_user: "${HOSPITALITY_BOOKINGS_DB_USER}"
+          db_password: "${HOSPITALITY_BOOKINGS_DB_PASSWORD}"
+          db_name: "${HOSPITALITY_BOOKINGS_DB_NAME}"
+          query_timeout: 30
+          database_purpose: "Hotel bookings management system storing all guest reservations across multiple hotels."
+          data_description: "Single table 'bookings' with columns: id, hotel_name, room_id, room_type, room_category, check_in_date, check_out_date, total_nights, guest_first_name, guest_last_name, guest_email, guest_phone, guest_country, guest_city, guest_address, guest_zip_code, meal_plan, total_price."
+          auto_detect_schema: true
+          query_examples:
+            - natural_language: "Tell me the amount of bookings for Royal Sovereign in 2025"
+              sql_query: "SELECT COUNT(*) AS total_bookings FROM bookings WHERE hotel_name = 'Royal Sovereign' AND EXTRACT(YEAR FROM check_in_date) = 2025;"
+            - natural_language: "Tell me the occupancy per month for Imperial Crown in 2025"
+              sql_query: "SELECT EXTRACT(MONTH FROM check_in_date) AS month, SUM(total_nights) AS occupied_nights FROM bookings WHERE hotel_name = 'Imperial Crown' AND EXTRACT(YEAR FROM check_in_date) = 2025 GROUP BY month ORDER BY month;"
+            - natural_language: "Tell me the revenues in August considering the current bookings in Grand Victoria"
+              sql_query: "SELECT SUM(total_price) AS total_revenue FROM bookings WHERE hotel_name = 'Grand Victoria' AND EXTRACT(MONTH FROM check_in_date) = 8;"
+            - natural_language: "Show me the RevPAR for May 2025 for Obsidian Tower"
+              sql_query: "SELECT SUM(total_price) / (COUNT(DISTINCT room_id) * 31) AS revpar FROM bookings WHERE hotel_name = 'Obsidian Tower' AND EXTRACT(YEAR FROM check_in_date) = 2025 AND EXTRACT(MONTH FROM check_in_date) = 5;"
+          csv_directories: []
+
+      agent_cleanup_function:
+        module: "sam_sql_database.lifecycle"
+        name: "cleanup_sql_agent_resources"
+
+      tools:
+        - tool_type: builtin-group
+          group_name: "artifact_management"
+        - tool_type: builtin-group
+          group_name: "data_analysis"
+        - tool_type: python
+          component_module: "sam_sql_database.tools"
+          function_name: "execute_sql_query"
+
+      session_service: 
+        type: "sql"
+        database_url: "${HOSPITALITY_BOOKINGS_DATABASE_URL, sqlite:///hospitality_bookings.db}"
+        default_behavior: "PERSISTENT"
+      artifact_service: *default_artifact_service
+
+      # Agent Card, Discovery, and Inter-Agent Communication
+      agent_card:
+        description: "Hotel Bookings Analytics Agent - Queries the hotel bookings PostgreSQL database. Can answer questions about booking counts, occupancy rates, revenues, RevPAR, and booking trends for any hotel."
+        defaultInputModes: ["text"]
+        defaultOutputModes: ["text", "file"] # Can output text or files (artifacts)
+        skills:
+          - id: "sql_query"
+            name: "Database Query"
+            description: "Answers questions by querying the connected SQL database."
+
+      agent_card_publishing:
+        interval_seconds: 30
+
+      agent_discovery:
+        enabled: false
+
+      inter_agent_communication:
+        allow_list: []

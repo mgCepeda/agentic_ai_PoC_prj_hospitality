@@ -47,6 +47,7 @@ unittest-reports/
 # Virtual environments
 #.env
 .venv/
+.venv-sam/
 venv/
 ENV/
 env/
@@ -115,3 +116,17 @@ doctrees/
 
 # Project specific
 logs/
+
+# SAM runtime files
+sam_hospitality/*.db
+sam_hospitality/sam.log
+sam_hospitality/hospitality-*.log
+sam_hospitality/vectorstore/
+sam_hospitality/rag_docs/
+sam_hospitality/nohup.out
+
+# Environment files with secrets
+sam_hospitality/.env
+
+# Temp/garbage files
+"sam_hospitality/tgres psql*"
